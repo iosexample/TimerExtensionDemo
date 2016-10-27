@@ -9,22 +9,22 @@
 import UIKit
 import SimpleTimerKit
 
-let defaultTimeInterval: NSTimeInterval = 10
+let defaultTimeInterval: TimeInterval = 10
 let taskDidFinishedInWidgetNotification: String = "com.onevcat.simpleTimer.TaskDidFinishedInWidgetNotification"
 
 class ViewController: UIViewController {
                             
     @IBOutlet weak var lblTimer: UILabel!
     
-    var timer: Timer!
+    var timer: SimpleTimerKit.Timer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        NSNotificationCenter.defaultCenter()
-            .addObserver(self, selector: "applicationWillResignActive",name: UIApplicationWillResignActiveNotification, object: nil)
-        NSNotificationCenter.defaultCenter()
-            .addObserver(self, selector: "taskFinishedInWidget", name: taskDidFinishedInWidgetNotification, object: nil)
+        NotificationCenter.default
+            .addObserver(self, selector: #selector(ViewController.applicationWillResignActive),name: NSNotification.Name.UIApplicationWillResignActive, object: nil)
+        NotificationCenter.default
+            .addObserver(self, selector: #selector(ViewController.taskFinishedInWidget), name: NSNotification.Name(rawValue: taskDidFinishedInWidgetNotification), object: nil)
     }
 
     override func didReceiveMemoryWarning() {
@@ -32,18 +32,18 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    private func updateLabel() {
+    fileprivate func updateLabel() {
         lblTimer.text = timer.leftTimeString
     }
     
-    private func showFinishAlert(# finished: Bool) {
-        let ac = UIAlertController(title: nil , message: finished ? "Finished" : "Stopped", preferredStyle: .Alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: {[weak ac] action in ac!.dismissViewControllerAnimated(true, completion: nil)}))
+    fileprivate func showFinishAlert(finished: Bool) {
+        let ac = UIAlertController(title: nil , message: finished ? "Finished" : "Stopped", preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default, handler: {[weak ac] action in ac!.dismiss(animated: true, completion: nil)}))
             
-        presentViewController(ac, animated: true, completion: nil)
+        present(ac, animated: true, completion: nil)
     }
     
-    dynamic private func applicationWillResignActive() {
+    dynamic fileprivate func applicationWillResignActive() {
         if timer == nil {
             clearDefaults()
         } else {
@@ -55,41 +55,41 @@ class ViewController: UIViewController {
         }
     }
     
-    dynamic private func taskFinishedInWidget() {
+    dynamic fileprivate func taskFinishedInWidget() {
         if let realTimer = timer {
             let (stopped, error) = realTimer.stop(false)
             if !stopped {
                 if let realError = error {
-                    println("error: \(realError.code)")
+                    print("error: \(realError.code)")
                 }
             }
         }
     }
     
-    private func saveDefaults() {
-        if let userDefault = NSUserDefaults(suiteName: "group.simpleTimerSharedDefaults") {
-            userDefault.setInteger(Int(timer.leftTime), forKey: keyLeftTime)
-            userDefault.setInteger(Int(NSDate().timeIntervalSince1970), forKey: keyQuitDate)
+    fileprivate func saveDefaults() {
+        if let userDefault = UserDefaults(suiteName: "group.simpleTimerSharedDefaults") {
+            userDefault.set(Int(timer.leftTime), forKey: keyLeftTime)
+            userDefault.set(Int(Date().timeIntervalSince1970), forKey: keyQuitDate)
             
             userDefault.synchronize()
         }
     }
     
-    private func clearDefaults() {
-        if let userDefault = NSUserDefaults(suiteName: "group.simpleTimerSharedDefaults") {
-            userDefault.removeObjectForKey(keyLeftTime)
-            userDefault.removeObjectForKey(keyQuitDate)
+    fileprivate func clearDefaults() {
+        if let userDefault = UserDefaults(suiteName: "group.simpleTimerSharedDefaults") {
+            userDefault.removeObject(forKey: keyLeftTime)
+            userDefault.removeObject(forKey: keyQuitDate)
             
             userDefault.synchronize()
         }
     }
 
-    @IBAction func btnStartPressed(sender: AnyObject) {
+    @IBAction func btnStartPressed(_ sender: AnyObject) {
         if timer == nil {
-            timer = Timer(timeInteral: defaultTimeInterval)
+            timer = SimpleTimerKit.Timer(timeInteral: defaultTimeInterval)
         }
         
-        let (started, error) = timer.start(updateTick: {
+        let (started, error) = timer.start({
                 [weak self] leftTick in self!.updateLabel()
             }, stopHandler: {
                 [weak self] finished in
@@ -101,17 +101,17 @@ class ViewController: UIViewController {
             updateLabel()
         } else {
             if let realError = error {
-                println("error: \(realError.code)")
+                print("error: \(realError.code)")
             }
         }
     }
     
-    @IBAction func btnStopPressed(sender: AnyObject) {
+    @IBAction func btnStopPressed(_ sender: AnyObject) {
         if let realTimer = timer {
             let (stopped, error) = realTimer.stop(true)
             if !stopped {
                 if let realError = error {
-                    println("error: \(realError.code)")
+                    print("error: \(realError.code)")
                 }
             }
         }

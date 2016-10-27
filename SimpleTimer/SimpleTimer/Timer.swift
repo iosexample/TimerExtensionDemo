@@ -14,12 +14,12 @@ public let keyQuitDate = "com.onevcat.simpleTimer.quitdate"
 let timerErrorDomain = "SimpleTimerError"
 
 public enum SimperTimerError: Int {
-    case AlreadyRunning = 1001
-    case NegativeLeftTime = 1002
-    case NotRunning = 1003
+    case alreadyRunning = 1001
+    case negativeLeftTime = 1002
+    case notRunning = 1003
 }
 
-extension NSTimeInterval {
+extension TimeInterval {
     func toString() -> String {
         let totalSecond = Int(self)
         let minute = totalSecond / 60
@@ -38,11 +38,11 @@ extension NSTimeInterval {
     }
 }
 
-public class Timer: NSObject {
+open class Timer: NSObject {
     
-    public var running: Bool = false
+    open var running: Bool = false
     
-    public var leftTime: NSTimeInterval {
+    open var leftTime: TimeInterval {
     didSet {
         if leftTime < 0 {
             leftTime = 0
@@ -50,27 +50,27 @@ public class Timer: NSObject {
     }
     }
     
-    public var leftTimeString: String {
+    open var leftTimeString: String {
     get {
         return leftTime.toString()
     }
     }
     
-    private var timerTickHandler: (NSTimeInterval -> ())? = nil
-    private var timerStopHandler: (Bool ->())? = nil
-    private var timer: NSTimer!
+    fileprivate var timerTickHandler: ((TimeInterval) -> ())? = nil
+    fileprivate var timerStopHandler: ((Bool) ->())? = nil
+    fileprivate var timer: Foundation.Timer!
     
-    public init(timeInteral: NSTimeInterval) {
+    public init(timeInteral: TimeInterval) {
         leftTime = timeInteral
     }
     
-    public func start(#updateTick: (NSTimeInterval -> Void)?, stopHandler: (Bool -> Void)?) -> (start: Bool, error: NSError?) {
+    open func start(_ updateTick: ((TimeInterval) -> Void)?, stopHandler: ((Bool) -> Void)?) -> (start: Bool, error: NSError?) {
         if running {
-            return (false, NSError(domain: timerErrorDomain, code: SimperTimerError.AlreadyRunning.rawValue, userInfo:nil))
+            return (false, NSError(domain: timerErrorDomain, code: SimperTimerError.alreadyRunning.rawValue, userInfo:nil))
         }
         
         if leftTime < 0 {
-            return (false, NSError(domain: timerErrorDomain, code: SimperTimerError.NegativeLeftTime.rawValue, userInfo:nil))
+            return (false, NSError(domain: timerErrorDomain, code: SimperTimerError.negativeLeftTime.rawValue, userInfo:nil))
         }
         
         timerTickHandler = updateTick
@@ -78,14 +78,14 @@ public class Timer: NSObject {
         
         running = true
         
-        timer = NSTimer.scheduledTimerWithTimeInterval(1, target: self, selector:"countTick", userInfo: nil, repeats: true)
+        timer = Foundation.Timer.scheduledTimer(timeInterval: 1, target: self, selector:#selector(Timer.countTick), userInfo: nil, repeats: true)
         
         return (true, nil)
     }
     
-    public func stop(interrupt: Bool) -> (stopped: Bool, error: NSError?) {
+    open func stop(_ interrupt: Bool) -> (stopped: Bool, error: NSError?) {
         if !running {
-            return (false, NSError(domain: timerErrorDomain, code: SimperTimerError.NotRunning.rawValue, userInfo:nil))
+            return (false, NSError(domain: timerErrorDomain, code: SimperTimerError.notRunning.rawValue, userInfo:nil))
         }
         
         running = false
@@ -102,7 +102,7 @@ public class Timer: NSObject {
         return (true, nil)
     }
     
-    dynamic private func countTick() {
+    dynamic fileprivate func countTick() {
         leftTime = leftTime - 1
         if let tickHandler = timerTickHandler {
             tickHandler(leftTime)
